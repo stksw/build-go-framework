@@ -4,51 +4,59 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"time"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:8080")
+	ln, err := net.Listen("tcp", "localhost:8080")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	conn, err := listener.Accept()
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-	if err != nil {
-		fmt.Println(err)
-		return
+		go handle(conn)
 	}
-
-	handle(conn)
 }
 
 func handle(conn net.Conn) {
+	for {
+		time.Sleep(time.Second * 3)
+		buf := make([]byte, 1024)
 
-	buf := make([]byte, 1000)
+		n, err := conn.Read(buf)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
-	n, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println(err)
-		return
+		requestInfo := string(buf[:n])
+		fmt.Println("request:")
+		fmt.Println(requestInfo)
+
+		if requestInfo == `"close"` {
+			fmt.Println("close from connecting")
+			conn.Close()
+			return
+		}
+
+		response := "response"
+		responseByteData, err := json.Marshal(response)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		_, err = conn.Write(responseByteData)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
-
-	fmt.Println("request:")
-	fmt.Println(string(buf[:n]))
-
-	responseData := "response"
-
-	responseByteData, err := json.Marshal(responseData)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	_, err = conn.Write(responseByteData)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	conn.Close()
 }
