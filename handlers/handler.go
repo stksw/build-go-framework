@@ -10,7 +10,7 @@ type StudentResponse struct {
 	Name string `json:"name"`
 }
 
-func StudentHandler(w http.ResponseWriter, r *http.Request) {
+func StudentsHandler(w http.ResponseWriter, r *http.Request) {
 
 	queries := r.URL.Query()
 	// query stringのnameを取り出す
@@ -28,8 +28,6 @@ func StudentHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseData)
-	return
-
 }
 
 func ListHandler(w http.ResponseWriter, r *http.Request) {

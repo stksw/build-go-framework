@@ -1,29 +1,47 @@
 package framework
 
 import (
-	"build-framework/handlers"
+	"errors"
 	"net/http"
 )
 
 type Engine struct {
+	Router *Router
+}
+
+type Router struct {
+	routingTable map[string]func(w http.ResponseWriter, r *http.Request)
+}
+
+func NewEngine() *Engine {
+	return &Engine{
+		Router: &Router{},
+	}
+}
+
+func (r *Router) Get(pathname string, handler func(w http.ResponseWriter, r *http.Request)) error {
+	if r.routingTable == nil {
+		r.routingTable = make(map[string]func(w http.ResponseWriter, r *http.Request))
+	}
+
+	if r.routingTable[pathname] != nil {
+		return errors.New("existed")
+	}
+
+	r.routingTable[pathname] = handler
+	return nil
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
-		if r.URL.Path == "/list" {
-			handlers.ListHandler(w, r)
+		handler := e.Router.routingTable[r.URL.Path]
+		if handler == nil {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		if r.URL.Path == "/users" {
-			handlers.UsersHandler(w, r)
-			return
-		}
-
-		if r.URL.Path == "/students" {
-			handlers.StudentHandler(w, r)
-			return
-		}
+		handler(w, r)
+		return
 	}
 }
 
