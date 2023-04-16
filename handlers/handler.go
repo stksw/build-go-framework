@@ -31,9 +31,13 @@ func StudentsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(w, "lists")
+	fmt.Fprint(w, "lists")
+}
+
+func ListItemHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprint(w, "item")
 }
 
 func UsersHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(w, "users")
+	fmt.Fprint(w, "users")
 }
