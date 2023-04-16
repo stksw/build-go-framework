@@ -1,3 +1,3 @@
-module build-go-framework
+module build-framework
 
 go 1.19

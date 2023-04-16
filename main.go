@@ -1,54 +1,17 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"net"
+	"build-framework/framework"
+	"build-framework/handlers"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:8080")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	e := framework.NewEngine()
 
-	conn, err := listener.Accept()
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	handle(conn)
-}
-
-func handle(conn net.Conn) {
-
-	buf := make([]byte, 1000)
-
-	n, err := conn.Read(buf)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println("request:")
-	fmt.Println(string(buf[:n]))
-
-	responseData := "response"
-
-	responseByteData, err := json.Marshal(responseData)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	_, err = conn.Write(responseByteData)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	conn.Close()
+	e.Router.Get("/list", handlers.ListHandler)
+	e.Router.Get("/list/:id", handlers.ListItemHandler)
+	// e.Router.Get("/list/name", handlers.ListItemHandler)
+	e.Router.Get("/users", handlers.UsersHandler)
+	e.Router.Get("/students", handlers.StudentsHandler)
+	e.Run()
 }
