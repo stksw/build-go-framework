@@ -1,43 +1,32 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
+	"build-framework/framework"
 )
 
 type StudentResponse struct {
 	Name string `json:"name"`
 }
 
-func StudentsHandler(w http.ResponseWriter, r *http.Request) {
-
-	queries := r.URL.Query()
+func StudentsHandler(ctx *framework.HttpContext) {
 	// query stringのnameを取り出す
-	name := queries.Get("name")
+	name := ctx.QueryKey("name", "")
 
 	response := StudentResponse{
 		Name: name,
 	}
 
-	responseData, err := json.Marshal(response)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(responseData)
+	ctx.Json(response)
 }
 
-func ListHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "lists")
+func ListHandler(ctx *framework.HttpContext) {
+	ctx.WriteString("list")
 }
 
-func ListItemHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "item")
+func ListItemHandler(ctx *framework.HttpContext) {
+	ctx.WriteString("list item")
 }
 
-func UsersHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "users")
+func UsersHandler(ctx *framework.HttpContext) {
+	ctx.WriteString("users")
 }

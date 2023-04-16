@@ -21,7 +21,7 @@ func NewEngine() *Engine {
 }
 
 // http getを登録する処理
-func (r *Router) Get(pathname string, handler func(w http.ResponseWriter, r *http.Request)) error {
+func (r *Router) Get(pathname string, handler func(ctx *HttpContext)) error {
 	// 末端の/を除く
 	pathname = strings.TrimSuffix(pathname, "/")
 	exist := r.routingTable.Search(pathname)
@@ -34,6 +34,8 @@ func (r *Router) Get(pathname string, handler func(w http.ResponseWriter, r *htt
 }
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := NewContext(w, r)
+
 	if r.Method == "GET" {
 		pathname := r.URL.Path
 		pathname = strings.TrimSuffix(pathname, "/")
@@ -43,7 +45,7 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		handler(w, r)
+		handler(ctx)
 		return
 	}
 }

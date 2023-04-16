@@ -1,13 +1,12 @@
 package framework
 
 import (
-	"net/http"
 	"strings"
 )
 
 type TreeNode struct {
 	children []*TreeNode
-	handler  func(w http.ResponseWriter, r *http.Request)
+	handler  func(ctx *HttpContext)
 	param    string
 }
 
@@ -23,7 +22,7 @@ func isGeneral(param string) bool {
 }
 
 // nodeに/区切りでpathを登録
-func (t *TreeNode) Insert(pathname string, handler func(w http.ResponseWriter, r *http.Request)) {
+func (t *TreeNode) Insert(pathname string, handler func(ctx *HttpContext)) {
 	node := t
 	params := strings.Split(pathname, "/")
 
@@ -60,7 +59,7 @@ func (t *TreeNode) findChild(param string) *TreeNode {
 }
 
 // 既に登録済のpathなら、そのhandlerを返す
-func (t *TreeNode) Search(pathname string) func(w http.ResponseWriter, r *http.Request) {
+func (t *TreeNode) Search(pathname string) func(ctx *HttpContext) {
 	params := strings.Split(pathname, "/")
 
 	result := dfs(t, params)
