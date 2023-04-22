@@ -13,7 +13,8 @@ func main() {
 	e.Router.Get("/list/:list_id/picture/:picture_id", handlers.ListItemPictureHandler)
 	e.Router.Get("/users", handlers.UsersHandler)
 	e.Router.Get("/students", handlers.StudentsHandler)
-	// e.Router.Get("/posts_page", handlers.PostsPageHandler)
-	// e.Router.Post("/posts", handlers.PostsHandler)
+
+	e.Router.Get("/form", handlers.FormHandler)
+	e.Router.Post("/posts", handlers.PostsHandler)
 	e.Run()
 }
