@@ -10,8 +10,10 @@ func main() {
 
 	e.Router.Get("/list", handlers.ListHandler)
 	e.Router.Get("/list/:id", handlers.ListItemHandler)
-	// e.Router.Get("/list/name", handlers.ListItemHandler)
+	e.Router.Get("/list/:list_id/picture/:picture_id", handlers.ListItemPictureHandler)
 	e.Router.Get("/users", handlers.UsersHandler)
 	e.Router.Get("/students", handlers.StudentsHandler)
+	// e.Router.Get("/posts_page", handlers.PostsPageHandler)
+	// e.Router.Post("/posts", handlers.PostsHandler)
 	e.Run()
 }

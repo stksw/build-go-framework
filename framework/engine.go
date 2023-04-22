@@ -39,13 +39,13 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "GET" {
 		pathname := r.URL.Path
 		pathname = strings.TrimSuffix(pathname, "/")
-		handler := e.Router.routingTable.Search(pathname)
-		if handler == nil {
+		targetNode := e.Router.routingTable.Search(pathname)
+		if targetNode == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		handler(ctx)
+		targetNode.handler(ctx)
 		return
 	}
 }

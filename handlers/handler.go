@@ -27,6 +27,29 @@ func ListItemHandler(ctx *framework.HttpContext) {
 	ctx.WriteString("list item")
 }
 
+func ListItemPictureHandler(ctx *framework.HttpContext) {
+	listID := ctx.GetParams(":list_id", "")
+	pictureID := ctx.GetParams(":picture_id", "")
+
+	type Output struct {
+		ListID    string `json:"list_id"`
+		PictureID string `json:"picture_id"`
+	}
+
+	ctx.Json(&Output{
+		ListID:    listID,
+		PictureID: pictureID,
+	})
+}
+
 func UsersHandler(ctx *framework.HttpContext) {
 	ctx.WriteString("users")
+}
+
+func PostsPageHandler(ctx *framework.HttpContext) {
+	ctx.WriteString("form")
+}
+
+func PostsHandler(ctx *framework.HttpContext) {
+	ctx.WriteString("post")
 }

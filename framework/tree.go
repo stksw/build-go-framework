@@ -1,6 +1,7 @@
 package framework
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -8,6 +9,7 @@ type TreeNode struct {
 	children []*TreeNode
 	handler  func(ctx *HttpContext)
 	param    string
+	parent   *TreeNode
 }
 
 func Constructor() TreeNode {
@@ -36,6 +38,7 @@ func (t *TreeNode) Insert(pathname string, handler func(ctx *HttpContext)) {
 			child = &TreeNode{
 				param:    param,
 				children: []*TreeNode{},
+				parent:   node,
 			}
 			node.children = append(node.children, child)
 		}
@@ -58,18 +61,13 @@ func (t *TreeNode) findChild(param string) *TreeNode {
 	return nil
 }
 
-// 既に登録済のpathなら、そのhandlerを返す
-func (t *TreeNode) Search(pathname string) func(ctx *HttpContext) {
+// 既に登録済のpathなら、そのノードを返す
+func (t *TreeNode) Search(pathname string) *TreeNode {
 	params := strings.Split(pathname, "/")
 
-	result := dfs(t, params)
-	// ルーティングが重複していなければnil
-	if result == nil {
-		return nil
-	}
-
-	// 登録済のルーティングなら、そのノードのhandlerを返す
-	return result.handler
+	// 未登録のルーティングなら、nil
+	// 登録済のルーティングなら、そのノードを返す
+	return dfs(t, params)
 }
 
 // 深さ優先探索
@@ -107,4 +105,21 @@ func dfs(node *TreeNode, params []string) *TreeNode {
 		}
 	}
 	return nil
+}
+
+func (t *TreeNode) ParseParams(pathname string) map[string]string {
+	node := t
+	pathname = strings.TrimSuffix(pathname, "/")
+	params := strings.Split(pathname, "/")
+	paramDict := make(map[string]string)
+
+	for i := len(params) - 1; i >= 0; i-- {
+		if isGeneral(node.param) {
+			paramDict[node.param] = params[i]
+		}
+		node = node.parent
+	}
+
+	fmt.Println("list", params)
+	return paramDict
 }
