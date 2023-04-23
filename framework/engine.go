@@ -1,8 +1,12 @@
 package framework
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
+	"time"
+
+	"golang.org/x/net/context"
 )
 
 type Engine struct {
@@ -68,6 +72,7 @@ func (r *Router) Delete(pathname string, handler func(ctx *HttpContext)) error {
 
 func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := NewContext(w, r)
+	ctx.Set("AuthUser", "test")
 
 	routingTable := e.Router.routingTables[strings.ToLower(r.Method)]
 	pathname := r.URL.Path
@@ -83,9 +88,28 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// 引数をctxのparamsにセットする
 	ctx.SetParams(paramDict)
-	targetNode.handler(ctx)
-	return
 
+	ch := make(chan struct{})
+	go func() {
+		// タイムアウトを試す際にはコメントアウトを外す
+		// time.Sleep(time.Second * 10)
+		targetNode.handler(ctx)
+		ch <- struct{}{}
+	}()
+
+	// 5秒待機する処理
+	durationContext, cancel := context.WithTimeout(r.Context(), time.Second*5)
+	defer cancel()
+
+	// 5秒待ってもgoroutineが応答なければ、Doneを実行
+	select {
+	case <-durationContext.Done():
+		ctx.SetHasTimeout(true)
+		fmt.Println("timeout")
+		ctx.W.Write([]byte("timeout"))
+	case <-ch:
+		fmt.Println("finish")
+	}
 }
 
 func (e *Engine) Run() {

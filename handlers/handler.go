@@ -55,8 +55,9 @@ type PostForm struct {
 }
 
 func FormHandler(ctx *framework.HttpContext) {
+	authUser := ctx.Get("AuthUser", "defaultValue")
 	postForm := &PostForm{
-		Name: "test name",
+		Name: authUser.(string),
 	}
 	ctx.RenderHtml("./html/posts.html", postForm)
 }
