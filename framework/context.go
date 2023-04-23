@@ -3,19 +3,22 @@ package framework
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"net/textproto"
 )
 
 type HttpContext struct {
-	w      http.ResponseWriter
-	r      *http.Request
+	W      http.ResponseWriter
+	R      *http.Request
 	params map[string]string
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *HttpContext {
 	return &HttpContext{
-		w:      w,
-		r:      r,
+		W:      w,
+		R:      r,
 		params: map[string]string{},
 	}
 }
@@ -23,21 +26,21 @@ func NewContext(w http.ResponseWriter, r *http.Request) *HttpContext {
 func (ctx *HttpContext) Json(data any) {
 	response, err := json.Marshal(data)
 	if err != nil {
-		ctx.w.WriteHeader(http.StatusInternalServerError)
+		ctx.W.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.w.Header().Set("Content-Type", "application/json")
-	ctx.w.WriteHeader(http.StatusOK)
-	ctx.w.Write(response)
+	ctx.W.Header().Set("Content-Type", "application/json")
+	ctx.W.WriteHeader(http.StatusOK)
+	ctx.W.Write(response)
 }
 
 func (ctx *HttpContext) WriteString(data string) {
-	fmt.Fprint(ctx.w, data)
+	fmt.Fprint(ctx.W, data)
 }
 
 func (ctx *HttpContext) QueryAll() map[string][]string {
-	return ctx.r.URL.Query()
+	return ctx.R.URL.Query()
 }
 
 func (ctx *HttpContext) QueryKey(key string, defaultValue string) string {
@@ -67,4 +70,49 @@ func (ctx *HttpContext) GetParams(key string, defaultValue string) string {
 		return v
 	}
 	return defaultValue
+}
+
+func (ctx *HttpContext) FormKey(key string, defaultValue string) string {
+	if ctx.R.Form == nil {
+		ctx.R.ParseMultipartForm(32 << 20)
+	}
+	if vs := ctx.R.Form[key]; len(vs) > 0 {
+		return vs[0]
+	}
+	return defaultValue
+}
+
+type FormFileInfo struct {
+	Data     []byte
+	Filename string
+	Header   textproto.MIMEHeader
+	Size     int64
+}
+
+func (ctx *HttpContext) FormFile(key string) (*FormFileInfo, error) {
+	file, fileHeader, err := ctx.R.FormFile(key)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		return nil, err
+	}
+
+	return &FormFileInfo{
+		Data:     data,
+		Filename: fileHeader.Filename,
+		Header:   fileHeader.Header,
+		Size:     fileHeader.Size,
+	}, nil
+}
+
+func (ctx *HttpContext) BindJson(data any) error {
+	byteData, err := io.ReadAll(ctx.R.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal([]byte{}, byteData)
 }

@@ -2,6 +2,10 @@ package handlers
 
 import (
 	"build-framework/framework"
+	"fmt"
+	"io/fs"
+	"io/ioutil"
+	"net/http"
 )
 
 type StudentResponse struct {
@@ -46,10 +50,58 @@ func UsersHandler(ctx *framework.HttpContext) {
 	ctx.WriteString("users")
 }
 
-func PostsPageHandler(ctx *framework.HttpContext) {
-	ctx.WriteString("form")
+func FormHandler(ctx *framework.HttpContext) {
+	ctx.WriteString(`<!DOCTYPE html>
+	<html>
+		<head>
+			<title>form</title>
+		</head>
+		<body>
+			<div>
+				<form action="/posts" method="post" enctype="multipart/form-data">
+					<div><label>name</label>: <input name="name"/></div>
+					<div><label>age</label>: 
+					<select name="age">
+						<option value="1">1</option>
+						<option value="2">2</option>
+					</select></div>
+					
+					<input name="file" type="file"/>
+					<div>
+					<button type="submit">submit</button>
+					</div>
+				</form>
+			</div>
+		</body>
+	</html>`)
 }
 
 func PostsHandler(ctx *framework.HttpContext) {
+	name := ctx.FormKey("name", "defaultName")
+	age := ctx.FormKey("age", "20")
+	fileInfo, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.W.WriteHeader(http.StatusBadRequest)
+	}
+
+	ioutil.WriteFile(fmt.Sprintf("%s_%s_%s", name, age, fileInfo.Filename), fileInfo.Data, fs.ModePerm)
+	if err != nil {
+		ctx.W.WriteHeader(http.StatusInternalServerError)
+	}
+
 	ctx.WriteString("post")
+}
+
+type UserPost struct {
+	title string
+}
+
+func UserPostHandler(ctx *framework.HttpContext) {
+	userPost := &UserPost{}
+	if err := ctx.BindJson(userPost); err != nil {
+		ctx.W.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	ctx.Json(userPost)
 }
