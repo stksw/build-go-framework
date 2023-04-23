@@ -91,3 +91,9 @@ func UserPostHandler(ctx *framework.HttpContext) {
 
 	ctx.Json(userPost)
 }
+
+func FetchApiHandler(ctx *framework.HttpContext) {
+	queryKey := ctx.QueryKey("callback", "cb")
+	ctx.JsonP(queryKey, "")
+
+}

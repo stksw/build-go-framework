@@ -16,5 +16,7 @@ func main() {
 
 	e.Router.Get("/form", handlers.FormHandler)
 	e.Router.Post("/posts", handlers.PostsHandler)
+
+	e.Router.Get("/fetch_api", handlers.FetchApiHandler)
 	e.Run()
 }
