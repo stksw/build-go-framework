@@ -50,30 +50,15 @@ func UsersHandler(ctx *framework.HttpContext) {
 	ctx.WriteString("users")
 }
 
+type PostForm struct {
+	Name string
+}
+
 func FormHandler(ctx *framework.HttpContext) {
-	ctx.WriteString(`<!DOCTYPE html>
-	<html>
-		<head>
-			<title>form</title>
-		</head>
-		<body>
-			<div>
-				<form action="/posts" method="post" enctype="multipart/form-data">
-					<div><label>name</label>: <input name="name"/></div>
-					<div><label>age</label>: 
-					<select name="age">
-						<option value="1">1</option>
-						<option value="2">2</option>
-					</select></div>
-					
-					<input name="file" type="file"/>
-					<div>
-					<button type="submit">submit</button>
-					</div>
-				</form>
-			</div>
-		</body>
-	</html>`)
+	postForm := &PostForm{
+		Name: "test name",
+	}
+	ctx.RenderHtml("./html/posts.html", postForm)
 }
 
 func PostsHandler(ctx *framework.HttpContext) {
@@ -93,7 +78,8 @@ func PostsHandler(ctx *framework.HttpContext) {
 }
 
 type UserPost struct {
-	title string
+	Title   string `json:"title"`
+	Content string `json:"content"`
 }
 
 func UserPostHandler(ctx *framework.HttpContext) {

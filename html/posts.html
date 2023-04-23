@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>form</title>
+</head>
+
+<body>
+  <div>
+    <form action="/posts" method="post" enctype="multipart/form-data">
+      <div><label>name</label>: <input name="name" /></div>
+      <div><label>age</label>:
+        <select name="age">
+          <option value="1">1</option>
+          <option value="2">2</option>
+        </select>
+      </div>
+
+      <input name="file" type="file" />
+      <div>
+        <button type="submit">submit</button>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>

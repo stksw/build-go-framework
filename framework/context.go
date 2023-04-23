@@ -3,6 +3,7 @@ package framework
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -114,5 +115,15 @@ func (ctx *HttpContext) BindJson(data any) error {
 		return err
 	}
 
+	// structをjsonに変換
 	return json.Unmarshal([]byte{}, byteData)
+}
+
+func (ctx *HttpContext) RenderHtml(filepath string, data any) error {
+	// templateを読み込む
+	t, err := template.ParseFiles(filepath)
+	if err != nil {
+		return err
+	}
+	return t.Execute(ctx.W, data)
 }
