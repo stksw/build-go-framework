@@ -90,7 +90,15 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx.SetParams(paramDict)
 
 	ch := make(chan struct{})
+	panicCh := make(chan struct{})
+
 	go func() {
+		// panicが起きたら、関数が終了する前にpanicChに空のstructを代入
+		defer func() {
+			if err := recover(); err != nil {
+				panicCh <- struct{}{}
+			}
+		}()
 		// タイムアウトを試す際にはコメントアウトを外す
 		// time.Sleep(time.Second * 10)
 		targetNode.handler(ctx)
@@ -109,6 +117,9 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ctx.W.Write([]byte("timeout"))
 	case <-ch:
 		fmt.Println("finish")
+	case <-panicCh:
+		fmt.Println("panic")
+		ctx.W.WriteHeader(500)
 	}
 }
 
