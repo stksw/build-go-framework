@@ -3,6 +3,8 @@ package framework
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -80,6 +82,17 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	targetNode := routingTable.Search(pathname)
 	if targetNode == nil || targetNode.handler == nil {
 		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	fileServer := http.FileServer(http.Dir("./static"))
+	fPath := path.Join("./static", pathname)
+	fInfo, err := os.Stat(fPath)
+
+	// ファイルが存在しているならサーバーを起動
+	fExists := err == nil && !fInfo.IsDir()
+	if fExists {
+		fileServer.ServeHTTP(w, r)
 		return
 	}
 
