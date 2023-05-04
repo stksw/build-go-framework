@@ -25,9 +25,12 @@ func main() {
 	router.Use(framework.AuthMiddleware)
 	router.Use(framework.TimeCostMiddleware)
 	router.Use(framework.TimeoutMiddleware)
+	router.UseNoRoute(func(ctx *framework.HttpContext) {
+		ctx.WriteString("not found....")
+	})
+	router.Use(framework.StaticFileMiddleware)
 
 	e.Run()
-
 }
 
 type MyResponseWriter struct {

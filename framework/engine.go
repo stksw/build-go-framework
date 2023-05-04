@@ -1,9 +1,8 @@
 package framework
 
 import (
+	"fmt"
 	"net/http"
-	"os"
-	"path"
 	"strings"
 )
 
@@ -14,6 +13,7 @@ type Engine struct {
 type Router struct {
 	routingTables map[string]*TreeNode
 	middlewares   []func(ctx *HttpContext)
+	noRoute       func(ctx *HttpContext)
 }
 
 func NewEngine() *Engine {
@@ -34,6 +34,10 @@ func NewEngine() *Engine {
 
 func (r *Router) Use(middleware func(ctx *HttpContext)) {
 	r.middlewares = append(r.middlewares, middleware)
+}
+
+func (r *Router) UseNoRoute(handler func(ctx *HttpContext)) {
+	r.noRoute = handler
 }
 
 func (r *Router) register(method string, pathname string, handler func(ctx *HttpContext)) error {
@@ -82,49 +86,33 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pathname := r.URL.Path
 	pathname = strings.TrimSuffix(pathname, "/")
 	targetNode := routingTable.Search(pathname)
+
+	var targetHandler func(ctx *HttpContext)
 	if targetNode == nil || targetNode.handler == nil {
-		w.WriteHeader(http.StatusNotFound)
-		return
+		// 404 not found
+		fmt.Println("not found")
+		targetHandler = e.Router.noRoute
+		if targetHandler == nil {
+			// 事前にnot found handlerが登録されていなければ
+			targetHandler = DefaultNotFoundHandler
+		}
+	} else {
+		targetHandler = targetNode.handler
+		// :list_id, :picture_idなどのparamsをdict型で返す
+		paramDict := targetNode.ParseParams(r.URL.Path)
+		// 引数をctxのparamsにセットする
+		ctx.SetParams(paramDict)
 	}
 
-	fileServer := http.FileServer(http.Dir("./static"))
-	fPath := path.Join("./static", pathname)
-	fInfo, err := os.Stat(fPath)
-
-	// ファイルが存在しているならサーバーを起動
-	fExists := err == nil && !fInfo.IsDir()
-	if fExists {
-		fileServer.ServeHTTP(w, r)
-		return
-	}
-
-	// :list_id, :picture_idなどのparamsをdict型で返す
-	paramDict := targetNode.ParseParams(r.URL.Path)
-
-	// 引数をctxのparamsにセットする
-	ctx.SetParams(paramDict)
-
-	ch := make(chan struct{})
-	panicCh := make(chan struct{})
-
-	go func() {
-		// panicが起きたら、関数が終了する前にpanicChに空のstructを送る
-		defer func() {
-			if err := recover(); err != nil {
-				panicCh <- struct{}{}
-			}
-		}()
-		// タイムアウトを試す際にはコメントアウトを外す
-		// time.Sleep(time.Second * 10)
-		targetNode.handler(ctx)
-		ch <- struct{}{}
-	}()
-
-	handlers := append(e.Router.middlewares, targetNode.handler)
+	handlers := append(e.Router.middlewares, targetHandler)
 	ctx.SetHandler(handlers)
 	ctx.Next()
 }
 
 func (e *Engine) Run() {
 	http.ListenAndServe("localhost:8000", e)
+}
+
+func DefaultNotFoundHandler(ctx *HttpContext) {
+	ctx.ResponseWriter().WriteHeader(http.StatusNotFound)
 }

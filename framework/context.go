@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"net/textproto"
 	"sync"
@@ -50,6 +51,12 @@ func (ctx *HttpContext) Next() {
 		ctx.handlers[ctx.index](ctx)
 		ctx.index += 1
 	}
+}
+
+// static fileの場合を考慮して中止する処理
+func (ctx *HttpContext) Abort() {
+	// インデックスの数値を増やしてループを終わらせる
+	ctx.index = math.MaxInt8
 }
 
 func (ctx *HttpContext) Get(key string, defaultValue any) any {

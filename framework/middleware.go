@@ -2,6 +2,10 @@ package framework
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+	"strings"
 	"time"
 
 	"golang.org/x/net/context"
@@ -20,6 +24,7 @@ func TimeoutMiddleware(ctx *HttpContext) {
 				panicCh <- struct{}{}
 			}
 		}()
+
 		ctx.Next()
 		successCh <- struct{}{}
 	}()
@@ -51,4 +56,21 @@ func TimeCostMiddleware(ctx *HttpContext) {
 	now := time.Now()
 	ctx.Next()
 	fmt.Println("time cost: ", time.Since(now).Milliseconds())
+}
+
+func StaticFileMiddleware(ctx *HttpContext) {
+	fileServer := http.FileServer(http.Dir("./static"))
+	pathname := ctx.Request().URL.Path
+	pathname = strings.TrimSuffix(pathname, "/")
+	fPath := path.Join("./static", pathname)
+	fInfo, err := os.Stat(fPath)
+
+	// ファイルが存在しているならサーバーを起動
+	fExists := err == nil && !fInfo.IsDir()
+	if fExists {
+		fileServer.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
+		ctx.Abort()
+		return
+	}
+
 }
