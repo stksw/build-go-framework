@@ -67,12 +67,12 @@ func PostsHandler(ctx *framework.HttpContext) {
 	age := ctx.FormKey("age", "20")
 	fileInfo, err := ctx.FormFile("file")
 	if err != nil {
-		ctx.W.WriteHeader(http.StatusBadRequest)
+		ctx.ResponseWriter().WriteHeader(http.StatusBadRequest)
 	}
 
 	ioutil.WriteFile(fmt.Sprintf("%s_%s_%s", name, age, fileInfo.Filename), fileInfo.Data, fs.ModePerm)
 	if err != nil {
-		ctx.W.WriteHeader(http.StatusInternalServerError)
+		ctx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
 	}
 
 	ctx.WriteString("post")
@@ -86,7 +86,7 @@ type UserPost struct {
 func UserPostHandler(ctx *framework.HttpContext) {
 	userPost := &UserPost{}
 	if err := ctx.BindJson(userPost); err != nil {
-		ctx.W.WriteHeader(http.StatusInternalServerError)
+		ctx.ResponseWriter().WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

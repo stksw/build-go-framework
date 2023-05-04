@@ -12,8 +12,8 @@ import (
 )
 
 type HttpContext struct {
-	W          http.ResponseWriter
-	R          *http.Request
+	w          http.ResponseWriter
+	r          *http.Request
 	params     map[string]string
 	keys       map[string]any
 	mux        sync.RWMutex
@@ -22,19 +22,19 @@ type HttpContext struct {
 
 func NewContext(w http.ResponseWriter, r *http.Request) *HttpContext {
 	return &HttpContext{
-		W:      w,
-		R:      r,
+		w:      w,
+		r:      r,
 		params: map[string]string{},
 		mux:    sync.RWMutex{},
 	}
 }
 
 func (ctx *HttpContext) Request() *http.Request {
-	return ctx.R
+	return ctx.r
 }
 
 func (ctx *HttpContext) ResponseWriter() http.ResponseWriter {
-	return ctx.W
+	return ctx.w
 }
 
 func (ctx *HttpContext) Get(key string, defaultValue any) any {
@@ -75,28 +75,28 @@ func (ctx *HttpContext) Json(data any) {
 
 	response, err := json.Marshal(data)
 	if err != nil {
-		ctx.W.WriteHeader(http.StatusInternalServerError)
+		ctx.w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	ctx.W.Header().Set("Content-Type", "application/json")
-	ctx.W.WriteHeader(http.StatusOK)
-	ctx.W.Write(response)
+	ctx.w.Header().Set("Content-Type", "application/json")
+	ctx.w.WriteHeader(http.StatusOK)
+	ctx.w.Write(response)
 }
 
 func (ctx *HttpContext) JsonP(callback string, parameter any) error {
 	if ctx.hasTimeout {
 		return nil
 	}
-	ctx.W.Header().Add("Content-Type", "application/javascript")
+	ctx.w.Header().Add("Content-Type", "application/javascript")
 	callback = template.JSEscapeString(callback)
 
-	_, err := ctx.W.Write([]byte(callback))
+	_, err := ctx.w.Write([]byte(callback))
 	if err != nil {
 		return err
 	}
 
-	_, err = ctx.W.Write([]byte("("))
+	_, err = ctx.w.Write([]byte("("))
 	if err != nil {
 		return err
 	}
@@ -106,12 +106,12 @@ func (ctx *HttpContext) JsonP(callback string, parameter any) error {
 		return err
 	}
 
-	_, err = ctx.W.Write(parameterData)
+	_, err = ctx.w.Write(parameterData)
 	if err != nil {
 		return err
 	}
 
-	_, err = ctx.W.Write([]byte(")"))
+	_, err = ctx.w.Write([]byte(")"))
 	if err != nil {
 		return err
 	}
@@ -123,11 +123,11 @@ func (ctx *HttpContext) WriteString(data string) {
 	if ctx.hasTimeout {
 		return
 	}
-	fmt.Fprint(ctx.W, data)
+	fmt.Fprint(ctx.w, data)
 }
 
 func (ctx *HttpContext) QueryAll() map[string][]string {
-	return ctx.R.URL.Query()
+	return ctx.r.URL.Query()
 }
 
 func (ctx *HttpContext) QueryKey(key string, defaultValue string) string {
@@ -160,10 +160,10 @@ func (ctx *HttpContext) GetParams(key string, defaultValue string) string {
 }
 
 func (ctx *HttpContext) FormKey(key string, defaultValue string) string {
-	if ctx.R.Form == nil {
-		ctx.R.ParseMultipartForm(32 << 20)
+	if ctx.r.Form == nil {
+		ctx.r.ParseMultipartForm(32 << 20)
 	}
-	if vs := ctx.R.Form[key]; len(vs) > 0 {
+	if vs := ctx.r.Form[key]; len(vs) > 0 {
 		return vs[0]
 	}
 	return defaultValue
@@ -177,7 +177,7 @@ type FormFileInfo struct {
 }
 
 func (ctx *HttpContext) FormFile(key string) (*FormFileInfo, error) {
-	file, fileHeader, err := ctx.R.FormFile(key)
+	file, fileHeader, err := ctx.r.FormFile(key)
 	if err != nil {
 		return nil, err
 	}
@@ -196,7 +196,7 @@ func (ctx *HttpContext) FormFile(key string) (*FormFileInfo, error) {
 }
 
 func (ctx *HttpContext) BindJson(data any) error {
-	byteData, err := io.ReadAll(ctx.R.Body)
+	byteData, err := io.ReadAll(ctx.r.Body)
 	if err != nil {
 		return err
 	}
@@ -215,5 +215,5 @@ func (ctx *HttpContext) RenderHtml(filepath string, data any) error {
 	if err != nil {
 		return err
 	}
-	return t.Execute(ctx.W, data)
+	return t.Execute(ctx.w, data)
 }

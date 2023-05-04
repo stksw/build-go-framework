@@ -27,7 +27,7 @@ func TimeoutMiddleware(ctx *HttpContext, next func(ctx *HttpContext)) func(ctx *
 		}()
 
 		// 5秒待機する処理
-		durationContext, cancel := context.WithTimeout(ctx.R.Context(), time.Second*5)
+		durationContext, cancel := context.WithTimeout(ctx.Request().Context(), time.Second*5)
 		defer cancel()
 
 		// 5秒待ってもgoroutineが応答なければ、Doneを実行
@@ -35,13 +35,13 @@ func TimeoutMiddleware(ctx *HttpContext, next func(ctx *HttpContext)) func(ctx *
 		case <-durationContext.Done():
 			ctx.SetHasTimeout(true)
 			fmt.Println("timeout")
-			ctx.W.Write([]byte("timeout"))
+			ctx.ResponseWriter().Write([]byte("timeout"))
 		case <-successCh:
 			fmt.Println(time.Since(now).Milliseconds())
 			fmt.Println("finish")
 		case <-panicCh:
 			fmt.Println("panic")
-			ctx.W.WriteHeader(500)
+			ctx.ResponseWriter().WriteHeader(500)
 		}
 	}
 }
