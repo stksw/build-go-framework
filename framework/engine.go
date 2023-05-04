@@ -13,6 +13,7 @@ type Engine struct {
 
 type Router struct {
 	routingTables map[string]*TreeNode
+	middlewares   []func(ctx *HttpContext)
 }
 
 func NewEngine() *Engine {
@@ -26,8 +27,13 @@ func NewEngine() *Engine {
 				"delete":  Constructor(),
 				"options": Constructor(),
 			},
+			middlewares: []func(ctx *HttpContext){},
 		},
 	}
+}
+
+func (r *Router) Use(middleware func(ctx *HttpContext)) {
+	r.middlewares = append(r.middlewares, middleware)
 }
 
 func (r *Router) register(method string, pathname string, handler func(ctx *HttpContext)) error {
@@ -114,25 +120,9 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		ch <- struct{}{}
 	}()
 
-	targetNode.handler(ctx)
-
-	// 5秒待機する処理
-	// durationContext, cancel := context.WithTimeout(r.Context(), time.Second*5)
-	// defer cancel()
-
-	// 5秒待ってもgoroutineが応答なければ、Doneを実行
-	// select {
-	// case <-durationContext.Done():
-	// 	ctx.SetHasTimeout(true)
-	// 	fmt.Println("timeout")
-	// 	ctx.W.Write([]byte("timeout"))
-	// case <-ch:
-	// 	fmt.Println(time.Since(now).Milliseconds())
-	// 	fmt.Println("finish")
-	// case <-panicCh:
-	// 	fmt.Println("panic")
-	// 	ctx.W.WriteHeader(500)
-	// }
+	handlers := append(e.Router.middlewares, targetNode.handler)
+	ctx.SetHandler(handlers)
+	ctx.Next()
 }
 
 func (e *Engine) Run() {

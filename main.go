@@ -3,49 +3,61 @@ package main
 import (
 	"build-framework/framework"
 	"build-framework/handlers"
-	"context"
 	"fmt"
-	"time"
+	"net/http"
 )
 
 func main() {
 	e := framework.NewEngine()
+	router := e.Router
 
-	e.Router.Get("/list", func(ctx *framework.HttpContext) {
-		framework.TimeCostMiddleware(ctx, framework.AuthMiddleware(ctx, framework.TimeoutMiddleware(ctx, handlers.ListHandler)))(ctx)
-	})
-	e.Router.Get("/list/:id", func(ctx *framework.HttpContext) {
-		successCh := make(chan struct{})
-		panicCh := make(chan struct{})
-		durationContext, cancel := context.WithTimeout(ctx.Request().Context(), time.Second*5)
-		defer cancel()
+	router.Get("/list", handlers.ListHandler)
+	router.Get("/list/:id", handlers.ListItemHandler)
+	router.Get("/list/:list_id/picture/:picture_id", handlers.ListItemPictureHandler)
+	router.Get("/users", handlers.UsersHandler)
+	router.Get("/students", handlers.StudentsHandler)
 
-		go func() {
-			defer func() {
-				if err := recover(); err != nil {
-					panicCh <- struct{}{}
-				}
-			}()
-			framework.AuthMiddleware(ctx, handlers.ListItemHandler)
-			successCh <- struct{}{}
-		}()
+	router.Get("/form", handlers.FormHandler)
+	router.Post("/posts", handlers.PostsHandler)
 
-		select {
-		case <-durationContext.Done():
-			fmt.Println("success")
-		case <-panicCh:
-			ctx.WriteString("panic")
-		case <-successCh:
-			fmt.Println("success")
-		}
-	})
-	e.Router.Get("/list/:list_id/picture/:picture_id", handlers.ListItemPictureHandler)
-	e.Router.Get("/users", handlers.UsersHandler)
-	e.Router.Get("/students", handlers.StudentsHandler)
+	router.Get("/fetch_api", handlers.FetchApiHandler)
 
-	e.Router.Get("/form", handlers.FormHandler)
-	e.Router.Post("/posts", handlers.PostsHandler)
+	router.Use(framework.AuthMiddleware)
+	router.Use(framework.TimeCostMiddleware)
+	router.Use(framework.TimeoutMiddleware)
 
-	e.Router.Get("/fetch_api", handlers.FetchApiHandler)
 	e.Run()
+
+}
+
+type MyResponseWriter struct {
+}
+
+func (rw *MyResponseWriter) Header() http.Header {
+	return nil
+}
+
+func (rw *MyResponseWriter) Write(data []byte) (int, error) {
+	fmt.Println(string(data))
+	return 0, nil
+}
+
+func (rw *MyResponseWriter) WriteHeader(statusCode int) {
+	fmt.Println(statusCode)
+}
+
+func TimeCost(ctx *framework.HttpContext) {
+	fmt.Println("timecost")
+}
+
+func AuthUser(ctx *framework.HttpContext) {
+	fmt.Println("AuthUser")
+}
+
+func TimeOut(ctx *framework.HttpContext) {
+	fmt.Println("timeout")
+}
+
+func Posts(ctx *framework.HttpContext) {
+	ctx.WriteString("posts")
 }

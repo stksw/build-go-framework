@@ -18,6 +18,8 @@ type HttpContext struct {
 	keys       map[string]any
 	mux        sync.RWMutex
 	hasTimeout bool
+	handlers   []func(ctx *HttpContext)
+	index      int
 }
 
 func NewContext(w http.ResponseWriter, r *http.Request) *HttpContext {
@@ -26,7 +28,12 @@ func NewContext(w http.ResponseWriter, r *http.Request) *HttpContext {
 		r:      r,
 		params: map[string]string{},
 		mux:    sync.RWMutex{},
+		index:  -1,
 	}
+}
+
+func (ctx *HttpContext) SetHandler(handlers []func(ctx *HttpContext)) {
+	ctx.handlers = handlers
 }
 
 func (ctx *HttpContext) Request() *http.Request {
@@ -35,6 +42,14 @@ func (ctx *HttpContext) Request() *http.Request {
 
 func (ctx *HttpContext) ResponseWriter() http.ResponseWriter {
 	return ctx.w
+}
+
+func (ctx *HttpContext) Next() {
+	ctx.index += 1
+	for ctx.index < len(ctx.handlers) {
+		ctx.handlers[ctx.index](ctx)
+		ctx.index += 1
+	}
 }
 
 func (ctx *HttpContext) Get(key string, defaultValue any) any {
