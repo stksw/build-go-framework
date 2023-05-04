@@ -1,8 +1,11 @@
 package framework
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
 )
 
@@ -110,7 +113,23 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *Engine) Run() {
-	http.ListenAndServe("localhost:8000", e)
+	ch := make(chan os.Signal)
+	signal.Notify(ch)
+
+	server := &http.Server{Addr: "localhost:8080", Handler: e}
+	go func() {
+		server.ListenAndServe()
+	}()
+
+	// メッセージが来たらshutdown
+	<-ch
+	fmt.Println("shutdown...")
+	if err := server.Shutdown(context.Background()); err != nil {
+		fmt.Println("error occurred at shutdown")
+		return
+	}
+
+	fmt.Println("shutdown successfully")
 }
 
 func DefaultNotFoundHandler(ctx *HttpContext) {
