@@ -24,8 +24,7 @@ func StudentsHandler(ctx *framework.HttpContext) {
 }
 
 func ListHandler(ctx *framework.HttpContext) {
-	list := make([]string, 0)
-	ctx.WriteString(list[0])
+	ctx.WriteString("list")
 }
 
 func ListItemHandler(ctx *framework.HttpContext) {
